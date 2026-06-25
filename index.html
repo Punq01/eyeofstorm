@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eye of storm</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+    :root {
+      --bg: #0a0a0a;
+      --fg: #c8c8c8;
+      --dim: #444;
+      --accent: #e8e8e8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      cursor: crosshair;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--dim);
+      padding-bottom: 16px;
+    }
+
+    .site-name {
+      font-family: 'VT323', monospace;
+      font-size: 28px;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      background: var(--fg);
+      display: inline-block;
+      margin-right: 6px;
+      animation: blink 2s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .status {
+      font-size: 11px;
+      color: var(--dim);
+      text-align: right;
+      line-height: 1.8;
+    }
+
+    /* Box */
+    .box {
+      border: 1px solid var(--dim);
+      padding: 20px;
+      position: relative;
+    }
+
+    .box-label {
+      position: absolute;
+      top: -8px; left: 12px;
+      background: var(--bg);
+      padding: 0 6px;
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1px;
+    }
+
+    /* Date */
+    .date-phrase {
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      color: var(--accent);
+      min-height: 32px;
+    }
+
+    /* Counters */
+    .widgets {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .widget { border: 1px solid var(--dim); padding: 16px; }
+    .widget-label { font-size: 10px; color: var(--dim); letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+    .widget-value { font-family: 'VT323', monospace; font-size: 32px; color: var(--accent); }
+    .widget-sub { font-size: 10px; color: var(--dim); margin-top: 4px; }
+
+    /* Weather */
+    .weather-widget {
+      border: 1px solid var(--dim);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .weather-side { font-size: 11px; color: var(--dim); line-height: 2; }
+    .weather-side span { color: var(--fg); }
+    .weather-divider { color: var(--dim); font-size: 20px; }
+
+    /* Presence */
+    .presence-widget {
+      border: 1px solid var(--dim);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .presence-item { font-size: 11px; color: var(--dim); line-height: 2; }
+    .presence-item span { color: var(--fg); display: block; }
+    .presence-divider { color: #222; }
+
+    /* Signal */
+    .thought-text {
+      color: var(--fg);
+      font-size: 13px;
+      line-height: 1.8;
+      margin-bottom: 16px;
+      min-height: 40px;
+      transition: opacity 0.15s;
+    }
+
+    /* Timeline */
+    .timeline-feed { display: flex; flex-direction: column; }
+
+    .tl-entry {
+      padding: 14px 0;
+      border-bottom: 1px solid #1a1a1a;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .tl-entry:last-child { border-bottom: none; }
+
+    .tl-num {
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      color: var(--dim);
+      flex-shrink: 0;
+      width: 28px;
+    }
+
+    .tl-content { flex: 1; }
+    .tl-title { font-size: 12px; color: var(--fg); margin-bottom: 2px; }
+    .tl-meta { font-size: 10px; color: var(--dim); }
+
+    /* Sound */
+    .sound-widget {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0;
+      border-top: 1px solid var(--dim);
+      border-bottom: 1px solid var(--dim);
+    }
+
+    .sound-label { font-size: 11px; color: var(--dim); }
+
+    .sound-wave { display: flex; gap: 2px; align-items: center; opacity: 0; transition: opacity 0.3s; }
+    .sound-wave.active { opacity: 1; }
+    .sound-wave span { display: block; width: 3px; background: var(--dim); animation: wave 1s ease-in-out infinite; }
+    .sound-wave span:nth-child(1) { height: 8px; animation-delay: 0s; }
+    .sound-wave span:nth-child(2) { height: 14px; animation-delay: 0.15s; }
+    .sound-wave span:nth-child(3) { height: 6px; animation-delay: 0.3s; }
+    .sound-wave span:nth-child(4) { height: 12px; animation-delay: 0.1s; }
+    .sound-wave span:nth-child(5) { height: 4px; animation-delay: 0.25s; }
+
+    @keyframes wave {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.4); }
+    }
+
+    /* Guestbook */
+    .guest-entries {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .guest-entries::-webkit-scrollbar { width: 2px; }
+    .guest-entries::-webkit-scrollbar-thumb { background: var(--dim); }
+
+    .entry { font-size: 12px; color: var(--fg); line-height: 1.6; padding-bottom: 12px; border-bottom: 1px solid #1e1e1e; }
+    .entry:last-child { border-bottom: none; padding-bottom: 0; }
+    .entry-meta { font-size: 10px; color: var(--dim); margin-top: 4px; }
+
+    .guest-form { display: flex; flex-direction: column; gap: 8px; }
+
+    .guest-input {
+      background: none;
+      border: 1px solid var(--dim);
+      color: var(--fg);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      padding: 8px 10px;
+      resize: none;
+      outline: none;
+      width: 100%;
+    }
+
+    .guest-input:focus { border-color: var(--fg); }
+    .guest-input::placeholder { color: var(--dim); }
+
+    /* Buttons */
+    .btn {
+      background: none;
+      border: 1px solid var(--dim);
+      color: var(--dim);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      padding: 4px 12px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.1s;
+    }
+
+    .btn:hover { border-color: var(--fg); color: var(--fg); }
+
+    .sound-btn {
+      background: none;
+      border: 1px solid var(--dim);
+      color: var(--dim);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      padding: 6px 14px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.1s;
+    }
+
+    .sound-btn:hover { border-color: var(--fg); color: var(--fg); }
+
+    /* Storm entry */
+    .storm-entry {
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .storm-btn {
+      background: none;
+      border: 1px solid #2a2a35;
+      color: #2a2a35;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      padding: 12px 32px;
+      cursor: pointer;
+      letter-spacing: 3px;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.4s;
+    }
+
+    .storm-btn:hover {
+      border-color: #6060a0;
+      color: #6060a0;
+      box-shadow: 0 0 24px rgba(96, 96, 160, 0.15);
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--dim);
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left { font-size: 10px; color: var(--dim); line-height: 1.8; }
+
+    .map-dot {
+      width: 48px; height: 48px;
+      border: 1px solid var(--dim);
+      position: relative; flex-shrink: 0;
+    }
+
+    .map-dot::after {
+      content: '×';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 14px;
+      color: var(--dim);
+    }
+
+    /* Pixel trail */
+    .pixel-trail {
+      position: fixed;
+      width: 4px; height: 4px;
+      background: var(--dim);
+      pointer-events: none;
+      z-index: 998;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <div class="site-name">eye of storm</div>
+    <div class="status">
+      <div><span class="status-dot"></span>онлайн</div>
+      <div id="current-time">--:--</div>
+      <div>вроцлав</div>
+    </div>
+  </header>
+
+  <div class="box">
+    <span class="box-label">[ дата ]</span>
+    <div class="date-phrase" id="date-phrase">...</div>
+  </div>
+
+  <div class="widgets">
+    <div class="widget">
+      <div class="widget-label">сайт существует</div>
+      <div class="widget-value" id="days-counter">1</div>
+      <div class="widget-sub">дней</div>
+    </div>
+    <div class="widget">
+      <div class="widget-label">были здесь</div>
+      <div class="widget-value" id="visitor-counter">—</div>
+      <div class="widget-sub">человек (примерно)</div>
+    </div>
+  </div>
+
+  <div class="weather-widget">
+    <div class="weather-side">снаружи<br><span id="outside-weather">шумно</span></div>
+    <div class="weather-divider">//</div>
+    <div class="weather-side" style="text-align:right">внутри<br><span>штиль</span></div>
+  </div>
+
+  <div class="presence-widget">
+    <div class="presence-item">статус<br><span id="presence-status">думает</span></div>
+    <div class="presence-divider">·</div>
+    <div class="presence-item">сейчас слушает<br><span id="presence-listening">помехи</span></div>
+    <div class="presence-divider">·</div>
+    <div class="presence-item">настроение<br><span id="presence-mood">центр</span></div>
+  </div>
+
+  <div class="box">
+    <span class="box-label">[ сигнал ]</span>
+    <div class="thought-text" id="thought-text">...</div>
+    <button class="btn" onclick="nextThought()">ещё →</button>
+  </div>
+
+  <div class="box">
+    <span class="box-label">[ timeline ]</span>
+    <div class="timeline-feed">
+      <div class="tl-entry">
+        <div class="tl-num">001</div>
+        <div class="tl-content">
+          <div class="tl-title">вроцлав. утро. рынок. звук брусчатки.</div>
+          <div class="tl-meta">аудио · 4:32 · 23.06.2026</div>
+        </div>
+      </div>
+      <div class="tl-entry">
+        <div class="tl-num">—</div>
+        <div class="tl-content">
+          <div class="tl-title" style="color:var(--dim); font-style:italic">следующая запись появится когда появится</div>
+          <div class="tl-meta">без расписания</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sound-widget">
+    <button class="sound-btn" id="sound-btn" onclick="toggleSound()">[ слушать ]</button>
+    <span class="sound-label">ambient / тишина с текстурой</span>
+    <div class="sound-wave" id="sound-wave">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <div class="box">
+    <span class="box-label">[ были здесь ]</span>
+    <div class="guest-entries" id="guest-entries">
+      <div class="entry">нашёл случайно. остался.<div class="entry-meta">анон · давно</div></div>
+      <div class="entry">не знаю как объяснить зачем я здесь, но это правильное место<div class="entry-meta">анон · недавно</div></div>
+      <div class="entry">тихо тут<div class="entry-meta">анон · только что</div></div>
+    </div>
+    <div class="guest-form">
+      <textarea class="guest-input" id="guest-input" rows="2" placeholder="оставь что-нибудь..."></textarea>
+      <button class="btn" onclick="submitEntry()">оставить →</button>
+    </div>
+  </div>
+
+  <div class="storm-entry">
+    <a href="storm-room.html" class="storm-btn">[ войти в шторм ]</a>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-left">
+      eyeofstorm.com<br>
+      <span style="color:#1e1e1e">no cookies · no tracking · no noise</span>
+    </div>
+    <div class="map-dot" title="местонахождение: неизвестно"></div>
+  </footer>
+
+</div>
+
+<div class="pixel-trail" id="trail1"></div>
+<div class="pixel-trail" id="trail2"></div>
+<div class="pixel-trail" id="trail3"></div>
+
+<script>
+  const datePhrases = [
+    "день когда кто-то впервые услышал тишину",
+    "23 июня, год неизвестен",
+    "последний день чего-то что ещё не началось",
+    "день 4 после шторма",
+    "сегодня — по местному времени где-то",
+    "дата которую ты не запомнишь",
+    "[данные недоступны]",
+    "год когда интернет был живой",
+    "утро без причины",
+    "не сегодня и не вчера",
+    "первый день после всего",
+    "день когда стало тихо",
+    "время без названия",
+    "момент между двумя мыслями",
+    "день который ещё не решил чем стать",
+    "эпоха ранних ссылок",
+    "секунда до и секунда после",
+    "день без координат",
+    "неопределённый четверг",
+    "промежуток"
+  ];
+
+  const thoughts = [
+    "тишина — не отсутствие звука. это когда звук перестаёт быть шумом.",
+    "в центре шторма никуда не нужно идти.",
+    "некоторые вещи понятны только через кожу.",
+    "ритм важнее правила.",
+    "место не требует объяснений.",
+    "присутствие — уже вклад.",
+    "то что ты ищешь — ищет тебя.",
+    "навигация в мире процессов обратная. сначала чувствуешь, потом карта.",
+    "символ указывает и остаётся внутри движения. знак объясняет снаружи.",
+    "пауза — не отдых. рецепторы требуют перерыва чтобы снова слышать.",
+    "глубина и поверхность — не противоречие.",
+    "тот кто нашёл это место — уже немного понимает.",
+    "форма появляется из потока. не наоборот.",
+    "камертон не объясняет тон. он его создаёт.",
+    "суверенность — это не изоляция. это собственная точка отсчёта."
+  ];
+
+  const presenceStatuses = ["думает", "где-то там", "в процессе", "молчит", "слушает", "здесь"];
+  const presenceListening = ["помехи", "дабовые гармоники", "тишину", "городской шум", "низкие частоты", "ничего / всё"];
+  const presenceMoods = ["центр", "штиль", "резонанс", "пауза", "в потоке", "между"];
+  const outsideWeathers = ["шумно", "неспокойно", "много слов", "алгоритмы", "помехи", "ветер"];
+
+  let thoughtIndex = Math.floor(Math.random() * thoughts.length);
+  let weatherIndex = 0;
+  let audioCtx = null, soundPlaying = false, gainNode = null, noiseSource = null;
+
+  function updateDatePhrase() {
+    const idx = new Date().getDate() % datePhrases.length;
+    document.getElementById('date-phrase').textContent = datePhrases[idx];
+  }
+
+  function nextThought() {
+    thoughtIndex = (thoughtIndex + 1) % thoughts.length;
+    const el = document.getElementById('thought-text');
+    el.style.opacity = '0';
+    setTimeout(() => { el.textContent = thoughts[thoughtIndex]; el.style.opacity = '1'; }, 150);
+  }
+
+  function updateTime() {
+    const now = new Date();
+    document.getElementById('current-time').textContent =
+      String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  }
+
+  function updateDaysCounter() {
+    const launch = new Date('2026-06-23T00:00:00');
+    const days = Math.floor((Date.now() - launch) / 86400000);
+    document.getElementById('days-counter').textContent = Math.max(1, days);
+  }
+
+  function updateVisitorCounter() {
+    let count = parseInt(localStorage.getItem('eos_visitors') || '0');
+    if (!sessionStorage.getItem('eos_visited')) {
+      count++;
+      localStorage.setItem('eos_visitors', count);
+      sessionStorage.setItem('eos_visited', '1');
+    }
+    document.getElementById('visitor-counter').textContent = count;
+  }
+
+  function rotatePresence() {
+    document.getElementById('presence-status').textContent = presenceStatuses[Math.floor(Math.random() * presenceStatuses.length)];
+    document.getElementById('presence-listening').textContent = presenceListening[Math.floor(Math.random() * presenceListening.length)];
+    document.getElementById('presence-mood').textContent = presenceMoods[Math.floor(Math.random() * presenceMoods.length)];
+  }
+
+  function rotateWeather() {
+    weatherIndex = (weatherIndex + 1) % outsideWeathers.length;
+    document.getElementById('outside-weather').textContent = outsideWeathers[weatherIndex];
+  }
+
+  function toggleSound() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (soundPlaying) {
+      gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+      setTimeout(() => { noiseSource.stop(); noiseSource = null; soundPlaying = false; }, 600);
+      document.getElementById('sound-btn').textContent = '[ слушать ]';
+      document.getElementById('sound-wave').classList.remove('active');
+    } else {
+      const bufferSize = audioCtx.sampleRate * 4;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let lastOut = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        data[i] = (lastOut + 0.02 * white) / 1.02;
+        lastOut = data[i];
+        data[i] *= 3.5;
+      }
+      noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = buffer;
+      noiseSource.loop = true;
+      gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.setTargetAtTime(0.15, audioCtx.currentTime, 1);
+      noiseSource.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      noiseSource.start();
+      soundPlaying = true;
+      document.getElementById('sound-btn').textContent = '[ стоп ]';
+      document.getElementById('sound-wave').classList.add('active');
+    }
+  }
+
+  function submitEntry() {
+    const input = document.getElementById('guest-input');
+    const text = input.value.trim();
+    if (!text || text.length > 200) return;
+    const entries = document.getElementById('guest-entries');
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = text + '<div class="entry-meta">анон · только что</div>';
+    entries.insertBefore(div, entries.firstChild);
+    input.value = '';
+    const stored = JSON.parse(localStorage.getItem('eos_entries') || '[]');
+    stored.unshift({ text, time: Date.now() });
+    localStorage.setItem('eos_entries', JSON.stringify(stored.slice(0, 20)));
+  }
+
+  function loadEntries() {
+    const stored = JSON.parse(localStorage.getItem('eos_entries') || '[]');
+    const entries = document.getElementById('guest-entries');
+    stored.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'entry';
+      const ago = Math.floor((Date.now() - e.time) / 60000);
+      const t = ago < 60 ? ago + ' мин назад' : ago < 1440 ? Math.floor(ago/60) + ' ч назад' : Math.floor(ago/1440) + ' дн назад';
+      div.innerHTML = e.text + '<div class="entry-meta">анон · ' + t + '</div>';
+      entries.appendChild(div);
+    });
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    ['trail1','trail2','trail3'].forEach((id, i) => {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        el.style.left = e.clientX + 'px';
+        el.style.top = e.clientY + 'px';
+        el.style.opacity = String(0.15 - i * 0.04);
+      }, i * 60);
+    });
+  });
+
+  document.getElementById('guest-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitEntry(); }
+  });
+
+  updateDatePhrase();
+  updateTime();
+  updateDaysCounter();
+  updateVisitorCounter();
+  loadEntries();
+  document.getElementById('thought-text').textContent = thoughts[thoughtIndex];
+
+  setInterval(updateTime, 30000);
+  setInterval(rotateWeather, 9000);
+  setInterval(rotatePresence, 15000);
+</script>
+
+</body>
+</html>
